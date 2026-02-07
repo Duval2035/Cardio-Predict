@@ -1,0 +1,37 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="blinker" />
+          <option value="click" />
+          <option value="Flask" />
+          <option value="itsdangerous" />
+          <option value="ixml" />
+          <option value="joblib" />
+          <option value="outcome" />
+          <option value="pandas-stubs" />
+          <option value="pygame" />
+          <option value="PySocks" />
+          <option value="scikit-learn" />
+          <option value="scipy" />
+          <option value="selenium" />
+          <option value="sortedcontainers" />
+          <option value="threadpoolctl" />
+          <option value="trio" />
+          <option value="trio-websocket" />
+          <option value="Werkzeug" />
+          <option value="wsproto" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="test.*" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

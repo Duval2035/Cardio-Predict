@@ -1,0 +1,15 @@
+# Python (IA)
+__pycache__/
+*.py[cod]
+venv/
+.env
+
+# Node/Vue (Frontend)
+node_modules/
+dist/
+.DS_Store
+
+# Laravel (Backend)
+/vendor
+.env
+/public/storage
