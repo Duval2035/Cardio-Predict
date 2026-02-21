@@ -1,34 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Activity, Clock, Mail, Download,
   ChevronRight, HeartPulse, User, LogOut, BookOpen, AlertCircle, FileText, CheckCircle
 } from 'lucide-react';
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer
 } from 'recharts';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-
-// Historique fictif
-const mockHistoryData = [
-  { date: '12 Jan', score: 45 },
-  { date: '28 Jan', score: 42 },
-  { date: '10 Fév', score: 38 },
-];
 
 const Dashboard = () => {
   // Par défaut, on affiche le guide
   const [activeTab, setActiveTab] = useState('guide');
   const [isLoading, setIsLoading] = useState(false);
   const [resultData, setResultData] = useState(null);
-  const [riskFactors, setRiskFactors] = useState([]); // Pour le nouveau graphique
+  const [riskFactors, setRiskFactors] = useState([]);
 
-  // 1. GESTION DES DONNÉES DU FORMULAIRE (Avec le champ Fumeur ajouté)
+  const [historyData, setHistoryData] = useState([]);
+
+  // Fonction pour charger l'historique depuis Laravel
+  const fetchHistory = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8001/api/history');
+      const data = await response.json();
+
+      // On formate la date pour que le graphique soit joli (ex: "13 Fév")
+      const formattedData = data.map(item => {
+        const dateObj = new Date(item.created_at);
+        return {
+          date: dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+          score: item.risk_score
+        };
+      });
+
+      setHistoryData(formattedData);
+    } catch (error) {
+      console.error("Erreur lors du chargement de l'historique", error);
+    }
+  };
+
+  // Se lance tout seul quand on ouvre la page
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  // 1. GESTION DES DONNÉES DU FORMULAIRE
   const [formData, setFormData] = useState({
     age: '', sex: '1', cp: '0', trestbps: '', chol: '',
     fbs: '0', restecg: '0', thalch: '', exang: '0',
     oldpeak: '0', slope: '0', ca: '0', thal: '1',
-    smoker: '0' // Nouveau champ pour le rapport visuel
+    smoker: '0'
   });
 
   const handleChange = (e) => {
@@ -52,7 +73,7 @@ const Dashboard = () => {
     setIsLoading(true);
 
     try {
-      // On retire "smoker" car l'IA ne le connait pas (pour éviter l'erreur 400)
+      // On retire "smoker" car l'IA ne le connait pas
       const { smoker, ...dataForAI } = formData;
 
       const dataToSend = {};
@@ -73,7 +94,8 @@ const Dashboard = () => {
 
       if (response.ok) {
         setResultData(data);
-        setRiskFactors(generateRiskFactors(formData)); // Génère les données du graphique barres
+        setRiskFactors(generateRiskFactors(formData));
+        fetchHistory(); // <-- Mise à jour automatique du graphique d'historique
         setActiveTab('results');
       } else {
         alert("Erreur du serveur : " + (data.message || "Vérifiez vos données."));
@@ -149,7 +171,7 @@ const Dashboard = () => {
       {/* --- CONTENU PRINCIPAL --- */}
       <main className="flex-1 p-8 overflow-y-auto w-full">
 
-        {/* ONGLET 1 : LE GUIDE (Comment ça marche) */}
+        {/* ONGLET 1 : LE GUIDE */}
         {activeTab === 'guide' && (
           <div className="max-w-4xl mx-auto space-y-8 animate-fade-in-up">
             <div className="bg-teal-600 text-white rounded-2xl p-10 shadow-lg relative overflow-hidden">
@@ -265,7 +287,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* ONGLET 3 : RÉSULTATS & PDF (Avec Graphique d'impact et tableau) */}
+        {/* ONGLET 3 : RÉSULTATS & PDF */}
         {activeTab === 'results' && resultData && (
           <div className="space-y-6 max-w-4xl mx-auto animate-fade-in-up">
 
@@ -304,7 +326,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Nouveau Tableau : Paramètres Renseignés */}
+              {/* Tableau : Paramètres Renseignés */}
               <h3 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">Paramètres Cliniques Renseignés</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 text-sm">
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
@@ -339,7 +361,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Nouveau Graphique : Impact des facteurs */}
+              {/* Graphique : Impact des facteurs */}
               <h3 className="text-xl font-bold text-slate-800 mb-6 border-b pb-2">Impact estimé de vos facteurs de risque</h3>
               <div className="h-64 w-full mb-8">
                 <ResponsiveContainer width="100%" height="100%">
@@ -363,7 +385,7 @@ const Dashboard = () => {
              <h2 className="text-2xl font-bold text-slate-900 mb-6">Historique de vos analyses</h2>
              <div className="h-80 w-full mt-8">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={[...mockHistoryData, resultData ? { date: 'Aujourd\'hui', score: resultData.data.risk_score } : null].filter(Boolean)}>
+                    <LineChart data={historyData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="date" />
                     <YAxis domain={[0, 100]} />

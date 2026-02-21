@@ -10,9 +10,10 @@ class Prediction extends Model
     use HasFactory;
 
     // On autorise Laravel à remplir ces colonnes
-    protected $fillable = [
-        'age', 'sex', 'cp', 'trestbps', 'chol', 'fbs',
-        'restecg', 'thalch', 'exang', 'oldpeak', 'slope',
-        'ca', 'thal', 'risk_score'
-    ];
+   protected $fillable = [
+    'user_id', 'age', 'sex', 'cp', 'trestbps', 'chol', 'fbs',
+    'restecg', 'thalch', 'exang', 'oldpeak', 'slope', 'ca', 'thal', 'risk_score'
+];
 }
+
+

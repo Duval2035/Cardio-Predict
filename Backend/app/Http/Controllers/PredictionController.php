@@ -4,14 +4,21 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Prediction;
-use Illuminate\Support\Facades\Http; // Pour parler à Python
+use Illuminate\Support\Facades\Http;
 
 class PredictionController extends Controller
 {
+    public function index()
+    {
+        // On ne prend QUE les prédictions de l'utilisateur actuellement connecté
+        $history = Prediction::where('user_id', auth()->id())->orderBy('created_at', 'asc')->get();
+        return response()->json($history);
+    }
     public function store(Request $request)
     {
         // 1. On récupère les données envoyées par le Frontend
         $data = $request->validate([
+            'user_id' => auth()->id(),
             'age' => 'required|numeric',
             'sex' => 'required|numeric',
             'cp' => 'required|numeric',
