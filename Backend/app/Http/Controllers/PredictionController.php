@@ -14,11 +14,11 @@ class PredictionController extends Controller
         $history = Prediction::where('user_id', auth()->id())->orderBy('created_at', 'asc')->get();
         return response()->json($history);
     }
+
     public function store(Request $request)
     {
-        // 1. On récupère les données envoyées par le Frontend
+        //On valide UNIQUEMENT les données envoyées par le Frontend
         $data = $request->validate([
-            'user_id' => auth()->id(),
             'age' => 'required|numeric',
             'sex' => 'required|numeric',
             'cp' => 'required|numeric',
@@ -34,13 +34,12 @@ class PredictionController extends Controller
             'thal' => 'required|numeric',
         ]);
 
-        // 2. On appelle l'IA (Python)
-        // Assure-toi que ton script Python (main.py) tourne sur le port 8000 !
+        // On appelle l'IA (Python)
         try {
+            // On envoie les données validées à Python
             $response = Http::post('http://127.0.0.1:8000/predict', $data);
-            $aiResult = $response->json(); // On récupère la réponse JSON de Python
+            $aiResult = $response->json();
 
-            // Si l'IA renvoie une erreur, on arrête tout
             if ($response->failed()) {
                 return response()->json(['error' => 'Erreur de communication avec l\'IA'], 500);
             }
@@ -49,17 +48,22 @@ class PredictionController extends Controller
             return response()->json(['error' => 'Le serveur IA est éteint. Lance python main.py !'], 500);
         }
 
-        // 3. On ajoute le score de l'IA aux données à sauvegarder
-        $data['risk_score'] = $aiResult['risk_score'];
+        // On prépare les données pour la base de données MySQL
+        $dataToSave = $data;
 
-        // 4. On sauvegarde TOUT dans la base de données MySQL
-        $prediction = Prediction::create($data);
+        // C'EST ICI QU'ON AJOUTE L'UTILISATEUR ET LE SCORE IA :
+        $dataToSave['user_id'] = auth()->id();
+        // Note: Assure-toi que c'est le bon chemin pour récupérer ton score selon ton main.py
+        $dataToSave['risk_score'] = $aiResult['data']['risk_score'] ?? $aiResult['risk_score'] ?? 0;
 
-        // 5. On renvoie le résultat au Frontend pour l'affichage
+        //On sauvegarde TOUT dans la base de données MySQL
+        $prediction = Prediction::create($dataToSave);
+
+        // On renvoie le résultat au Frontend pour l'affichage
         return response()->json([
             'message' => 'Prédiction réussie',
             'data' => $prediction,
-            'ai_message' => $aiResult['message'] // "Risque élevé" ou "faible"
+            'ai_message' => $aiResult['ai_message'] ?? $aiResult['message'] ?? 'Analyse terminée'
         ], 201);
     }
 }
